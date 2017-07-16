@@ -1,6 +1,9 @@
 package com.example.denis.mlleveleditor;
 
 import android.content.Context;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -8,7 +11,9 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -16,10 +21,19 @@ import java.util.Arrays;
  */
 
 public class EditorView extends View {
+    int levelNumber;
+
     Paint paint;
+    Bitmap wallCell;
 
     int levelSixeX;
     int levelSizeY;
+
+    int levelStartX;
+    int levelStartY;
+
+    int levelFinishX;
+    int levelFinishY;
 
     final int scaleH = 14;
     int scaleW;
@@ -41,17 +55,22 @@ public class EditorView extends View {
     MyButton toBG;
     MyButton toWALL;
     MyButton toWALLWT;
+    MyButton chngMode;
+    MyButton insertButton;
     MyButton toSTART;
     MyButton toFINISH;
 
-    public EditorView(Context context, int x,int y) {
+    public EditorView(Context context, int x,int y, int ln) {
         super(context);
         paint = new Paint();
         levelSixeX = x;
         levelSizeY = y;
+        levelNumber = ln;
 
         currentY = 0;
         currentX = 0;
+
+
 
         encodedLevelMap = new Type[levelSizeY][levelSixeX];
         typeBrush = Type.BACKGROUND;
@@ -71,8 +90,10 @@ public class EditorView extends View {
     protected void onDraw(Canvas canvas) {
         drawMap(canvas);
         canvas.drawBitmap(toBG.icon,toBG.x,toBG.y,paint);
+        canvas.drawBitmap(chngMode.icon,chngMode.x,chngMode.y,paint);
         canvas.drawBitmap(toWALL.icon,toWALL.x,toWALL.y,paint);
         canvas.drawBitmap(toWALLWT.icon,toWALLWT.x,toWALLWT.y,paint);
+        canvas.drawBitmap(insertButton.icon,insertButton.x,insertButton.y,paint);
         super.onDraw(canvas);
 
     }
@@ -86,8 +107,8 @@ public class EditorView extends View {
                         canvas.drawRect(d*cellSize,k*cellSize,d*cellSize+cellSize,k*cellSize+cellSize,paint);
                         break;
                     case WALL:
-                        paint.setColor(Color.RED);
-                        canvas.drawRect(d*cellSize,k*cellSize,d*cellSize+cellSize,k*cellSize+cellSize,paint);
+
+                        canvas.drawBitmap(wallCell,d*cellSize,k*cellSize,paint);
                         break;
                     case WALL_WITH_TORCH:
                         paint.setColor(Color.YELLOW);
@@ -100,10 +121,13 @@ public class EditorView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+
         super.onSizeChanged(w, h, oldw, oldh);
         cellSize = h/ scaleH;
         buttonSize = (int)(cellSize*1.5);
         scaleW = w/cellSize;
+
+        wallCell = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.wall_cell),cellSize,cellSize,false);
 
         toBG = new MyButton(0,0,buttonSize,BitmapFactory.decodeResource(getResources(), R.drawable.bg)) {
             @Override
@@ -127,6 +151,46 @@ public class EditorView extends View {
                 typeBrush = Type.WALL_WITH_TORCH;
             }
         };
+
+        chngMode = new MyButton(w-buttonSize*2,h-buttonSize*2,buttonSize*2,BitmapFactory.decodeResource(getResources(), R.drawable.chng)) {
+            @Override
+            void makeAction() {
+                super.makeAction();
+                if (moveMode)
+                    moveMode = false;
+                else
+                    moveMode = true;
+            }
+        };
+        insertButton = new MyButton(w/2,h/2,buttonSize*2,BitmapFactory.decodeResource(getResources(), R.drawable.chng)) {
+            @Override
+            void makeAction() {
+                super.makeAction();
+
+                MaskDBHelper mDBHelper = new MaskDBHelper(getContext());
+                LevelDBHelper lDBHelper = new LevelDBHelper(getContext());
+
+                SQLiteDatabase maskDatabase;
+                try {
+                    mDBHelper.updateDataBase();
+                } catch (IOException mIOException) {
+                    throw new Error("UnableToUpdateDatabase");
+                }
+
+                try {
+                    maskDatabase = mDBHelper.getReadableDatabase();
+                } catch (SQLException mSQLException) {
+                    throw mSQLException;
+                }
+                SQLiteDatabase levelsDatabase = lDBHelper.getWritableDatabase();
+                MapDecoder md = new MapDecoder( maskDatabase, levelsDatabase, levelNumber,10,10,11,11);
+                md.insertDecodedLevel(encodedLevelMap);
+                Toast.makeText(getContext(),"Succesfull",Toast.LENGTH_LONG).show();
+
+
+            }
+        };
+
     }
 
     @Override
@@ -137,25 +201,17 @@ public class EditorView extends View {
         int cellY = (int)y/cellSize+currentY;
         switch(event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                if (toBG.zone.contains((int)x,(int)y)){
-                    toBG.makeAction();
-                }else  if (toWALL.zone.contains((int)x,(int)y)){
-                    toWALL.makeAction();
-                }else  if (toWALLWT.zone.contains((int)x,(int)y)) {
-                    toWALLWT.makeAction();
-                }else
-                    encodedLevelMap[cellY][cellX] = typeBrush;
 
                 startEventMoveX = (int)x;
                 startEventMoveY = (int)y;
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (moveMode){
-                    if (startEventMoveX-x > cellSize*4 && currentX<encodedLevelMap[0].length-1)
+                    if (startEventMoveX-x > cellSize*4 && currentX<encodedLevelMap[0].length-1-scaleW)
                         currentX++;
                     else if (startEventMoveX-x < (-1)*cellSize*4 && currentX>0)
                         currentX--;
-                    if (startEventMoveY-y > cellSize*4 && currentY<encodedLevelMap.length-1 )
+                    if (startEventMoveY-y > cellSize*4 && currentY<encodedLevelMap.length-1 - scaleH )
                         currentY++;
                     else if (startEventMoveY-y < (-1)*cellSize*4 && currentY>0)
                         currentY--;
@@ -164,13 +220,17 @@ public class EditorView extends View {
                 onUpdate();
                 break;
             case MotionEvent.ACTION_UP:
-                 if (toBG.zone.contains((int)x,(int)y)){
+                if (toBG.zone.contains((int)x,(int)y)){
                     toBG.makeAction();
                 }else  if (toWALL.zone.contains((int)x,(int)y)){
                     toWALL.makeAction();
                 }else  if (toWALLWT.zone.contains((int)x,(int)y)) {
                     toWALLWT.makeAction();
-                }else
+                }else  if (chngMode.zone.contains((int)x,(int)y)) {
+                     chngMode.makeAction();
+                }else  if (insertButton.zone.contains((int)x,(int)y)) {
+                    insertButton.makeAction();
+                }else if (!moveMode)
                     encodedLevelMap[cellY][cellX] = typeBrush;
                 onUpdate();
         }
@@ -184,6 +244,8 @@ public class EditorView extends View {
 
 
     enum Type{
-        BACKGROUND, WALL, WALL_WITH_TORCH;
+        BACKGROUND, WALL, WALL_WITH_TORCH,
+        START,FINISH,
+        DOESNT_MATTER;
     }
 }
