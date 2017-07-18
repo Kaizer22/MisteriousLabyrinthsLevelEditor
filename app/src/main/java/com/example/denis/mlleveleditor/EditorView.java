@@ -93,6 +93,8 @@ public class EditorView extends View {
         canvas.drawBitmap(chngMode.icon,chngMode.x,chngMode.y,paint);
         canvas.drawBitmap(toWALL.icon,toWALL.x,toWALL.y,paint);
         canvas.drawBitmap(toWALLWT.icon,toWALLWT.x,toWALLWT.y,paint);
+        canvas.drawBitmap(toSTART.icon,toSTART.x,toSTART.y,paint);
+        canvas.drawBitmap(toFINISH.icon,toFINISH.x,toFINISH.y,paint);
         canvas.drawBitmap(insertButton.icon,insertButton.x,insertButton.y,paint);
         super.onDraw(canvas);
 
@@ -162,7 +164,22 @@ public class EditorView extends View {
                     moveMode = true;
             }
         };
-        insertButton = new MyButton(w/2,h/2,buttonSize*2,BitmapFactory.decodeResource(getResources(), R.drawable.chng)) {
+        toSTART = new MyButton(buttonSize*3,0,buttonSize,BitmapFactory.decodeResource(getResources(), R.drawable.start)) {
+            @Override
+            void makeAction() {
+                super.makeAction();
+                typeBrush = Type.START;
+            }
+        };
+
+        toFINISH = new MyButton(buttonSize*4,0,buttonSize,BitmapFactory.decodeResource(getResources(), R.drawable.finish)) {
+            @Override
+            void makeAction() {
+                super.makeAction();
+                typeBrush = Type.FINISH;
+            }
+        };
+        insertButton = new MyButton(0,h-buttonSize*2,buttonSize*2,BitmapFactory.decodeResource(getResources(), R.drawable.insert)) {
             @Override
             void makeAction() {
                 super.makeAction();
@@ -183,9 +200,8 @@ public class EditorView extends View {
                     throw mSQLException;
                 }
                 SQLiteDatabase levelsDatabase = lDBHelper.getWritableDatabase();
-                MapDecoder md = new MapDecoder( maskDatabase, levelsDatabase, levelNumber,10,10,11,11);
-                md.insertDecodedLevel(encodedLevelMap);
-                Toast.makeText(getContext(),"Succesfull",Toast.LENGTH_LONG).show();
+                MapManager md = new MapManager(getContext(), maskDatabase, levelsDatabase, levelNumber ,levelStartX ,levelStartY, levelFinishX, levelFinishY );
+                md.doInsetrion(encodedLevelMap);
 
 
             }
@@ -216,7 +232,19 @@ public class EditorView extends View {
                     else if (startEventMoveY-y < (-1)*cellSize*4 && currentY>0)
                         currentY--;
                 }else
-                    encodedLevelMap[cellY][cellX] = typeBrush;
+                    if (typeBrush != Type.START && typeBrush != Type.FINISH)
+                        encodedLevelMap[cellY][cellX] = typeBrush;
+                    else if (typeBrush == Type.START){
+                        levelStartX = cellX;
+                        levelStartY = cellY;
+                        typeBrush = Type.WALL;
+                        Toast.makeText(getContext(),"Start :"+cellX + " " + cellY, Toast.LENGTH_LONG).show();
+                    }else if (typeBrush == Type.FINISH) {
+                        levelFinishX = cellX;
+                        levelFinishY = cellY;
+                        typeBrush = Type.WALL;
+                        Toast.makeText(getContext(), "Finish :" + cellX + " " + cellY, Toast.LENGTH_LONG).show();
+                    }
                 onUpdate();
                 break;
             case MotionEvent.ACTION_UP:
@@ -228,10 +256,26 @@ public class EditorView extends View {
                     toWALLWT.makeAction();
                 }else  if (chngMode.zone.contains((int)x,(int)y)) {
                      chngMode.makeAction();
+                }else  if (toSTART.zone.contains((int)x,(int)y)) {
+                    toSTART.makeAction();
+                }else  if (toFINISH.zone.contains((int)x,(int)y)) {
+                    toFINISH.makeAction();
                 }else  if (insertButton.zone.contains((int)x,(int)y)) {
                     insertButton.makeAction();
                 }else if (!moveMode)
-                    encodedLevelMap[cellY][cellX] = typeBrush;
+                    if (typeBrush != Type.START && typeBrush != Type.FINISH)
+                        encodedLevelMap[cellY][cellX] = typeBrush;
+                    else if (typeBrush == Type.START){
+                        levelStartX = cellX;
+                        levelStartY = cellY;
+                        typeBrush = Type.WALL;
+                        Toast.makeText(getContext(),"Start :"+cellX + " " + cellY, Toast.LENGTH_LONG).show();
+                    }else if (typeBrush == Type.FINISH) {
+                        levelFinishX = cellX;
+                        levelFinishY = cellY;
+                        typeBrush = Type.WALL;
+                        Toast.makeText(getContext(), "Finish :" + cellX + " " + cellY, Toast.LENGTH_LONG).show();
+                    }
                 onUpdate();
         }
 
