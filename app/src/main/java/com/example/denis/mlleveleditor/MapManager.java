@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
 import android.provider.ContactsContract;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.util.LinkedList;
@@ -44,6 +45,7 @@ public class MapManager {
         finishY = fY;
 
         allMasks = new LinkedList<>();
+        Log.d("MASK_TEST","I am HERE(in MapManager)");
         loadMasks();
     }
 
@@ -158,7 +160,7 @@ public class MapManager {
 
         shapeIndex = dbCursor.getColumnIndex(MaskDBHelper.KEY_MASK_SHAPE);
         codeIndex = dbCursor.getColumnIndex(MaskDBHelper.KEY_MASK_CODE);
-
+        Log.d("MASK_TEST","I am HERE(in loadMasks)");
         do{
             shape = dbCursor.getString(shapeIndex);
             code = dbCursor.getString(codeIndex);
@@ -178,10 +180,11 @@ public class MapManager {
         Mask(String s, String code){
             mask = new EditorView.Type[3][3];
             shape = s;
-
+            Log.d("MASK_TEST","I am HERE(in constructor)");
             int f = 0;
             for (int i = 0; i<3 && f < code.length(); i++, f++){
                 for (int j = 0; j < 3 && f < code.length(); j++, f++) {
+                    Log.d("MASK_TEST","I am HERE(before switch)");
                     switch (code.charAt(f)){
                         case 'D':
                             mask[i][j] = EditorView.Type.DOESNT_MATTER;
@@ -193,8 +196,10 @@ public class MapManager {
                             mask[i][j] = EditorView.Type.BACKGROUND;
                             break;
                     }
+                    Log.d("MASK_TEST", code.charAt(f) + " " + mask[i][j].toString());
                 }
             }
+
         }
 
         Mask(){
@@ -206,8 +211,8 @@ public class MapManager {
             Mask m2 = (Mask)obj;
             for (int i = 0; i <3; i++) {
                 for (int j = 0; j <3; j++) {
-                    if ((this.mask[i][j] != m2.mask[i][j]) && (m2.mask[i][j] != EditorView.Type.DOESNT_MATTER) && (this.mask[i][j] != EditorView.Type.WALL_WITH_TORCH && m2.mask[i][j] != EditorView.Type.WALL)){
-                        return false;
+                    if (this.mask[i][j] != m2.mask[i][j] && m2.mask[i][j] != EditorView.Type.DOESNT_MATTER) {
+                        if (this.mask[i][j] == EditorView.Type.WALL_WITH_TORCH && m2.mask[i][j] == EditorView.Type.WALL){} else {return false;}
                     }
                 }
             }

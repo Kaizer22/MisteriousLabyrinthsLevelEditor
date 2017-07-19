@@ -3,13 +3,19 @@ package com.example.denis.mlleveleditor;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,7 +23,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //showMeDatabase();
+        showMeDatabase();
+        //fdsfsdfsdfsdfsddddddddddddddddddd
     }
 
     public void toEditor(View v) {
@@ -48,6 +55,84 @@ public class MainActivity extends AppCompatActivity {
         ldb.delete(LevelDBHelper.TABLE_LEVELS_INFO, LevelDBHelper.KEY_ID + " = " + number,null);
         ldb.delete(LevelDBHelper.TABLE_LEVEL_MAPS, LevelDBHelper.KEY_NUM_LEVEL + " = " + number,null);
     }
+
+    public void unloadDatabase(View v){
+        File direct = new File(Environment.getExternalStorageDirectory() + "/Exam Creator");
+
+        if(!direct.exists())
+        {
+            if(direct.mkdir())
+            {
+                //directory is created;
+            }
+
+        }
+        exportDB();
+        importDB();
+    }
+
+    private void importDB() {
+
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data  = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String  currentDBPath= "//data//" + "com.example.denis.mlleveleditor"
+                        + "//databases//" + "gameplay.db";
+                String backupDBPath  = "/Download/gameplay.db";
+                File  backupDB= new File(data, currentDBPath);
+                File currentDB  = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(),
+                        Toast.LENGTH_LONG).show();
+
+            }
+        } catch (Exception e) {
+
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
+                    .show();
+
+        }
+    }
+    //exporting database
+    private void exportDB() {
+
+
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String  currentDBPath= "//data//" + "com.example.denis.mlleveleditor"
+                        + "//databases//" + "gameplay.db";
+                String backupDBPath  = "/Download/gameplay.db";
+                File currentDB = new File(data, currentDBPath);
+                File backupDB = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(),
+                        Toast.LENGTH_LONG).show();
+
+            }
+        } catch (Exception e) {
+
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG)
+                    .show();
+
+        }
+    }
+
+
 
     private void showMeDatabase(){
         LevelDBHelper ldbh = new LevelDBHelper(this);
