@@ -182,21 +182,24 @@ public class MapManager {
             shape = s;
             Log.d("MASK_TEST","I am HERE(in constructor)");
             int f = 0;
-            for (int i = 0; i<3 && f < code.length(); i++, f++){
-                for (int j = 0; j < 3 && f < code.length(); j++, f++) {
+            for (int i = 2; i>=0 && f < code.length(); i--){ //инверсия i для синхронизации с движком
+                for (int j = 0; j < 3 && f < code.length(); j++) {
                     Log.d("MASK_TEST","I am HERE(before switch)");
                     switch (code.charAt(f)){
                         case 'D':
                             mask[i][j] = EditorView.Type.DOESNT_MATTER;
+                            f++;
                             break;
                         case 'W':
                             mask[i][j] = EditorView.Type.WALL;
+                            f++;
                             break;
                         case 'B':
                             mask[i][j] = EditorView.Type.BACKGROUND;
+                            f++;
                             break;
                     }
-                    Log.d("MASK_TEST", code.charAt(f) + " " + mask[i][j].toString());
+                    //Log.d("MASK_TEST", code.charAt(f) + " " + mask[i][j].toString());
                 }
             }
 

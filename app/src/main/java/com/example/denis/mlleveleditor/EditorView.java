@@ -187,7 +187,9 @@ public class EditorView extends View {
                 MaskDBHelper mDBHelper = new MaskDBHelper(getContext());
                 LevelDBHelper lDBHelper = new LevelDBHelper(getContext());
 
-                SQLiteDatabase maskDatabase;
+                SQLiteDatabase maskDatabase; //= mDBHelper.getReadableDatabase();
+                //mDBHelper.onUpgrade(maskDatabase,0,1);
+
                 try {
                     mDBHelper.updateDataBase();
                 } catch (IOException mIOException) {

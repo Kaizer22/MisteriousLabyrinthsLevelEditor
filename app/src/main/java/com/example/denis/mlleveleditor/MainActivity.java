@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
             if (sd.canWrite()) {
                 String  currentDBPath= "//data//" + "com.example.denis.mlleveleditor"
                         + "//databases//" + "gameplay.db";
-                String backupDBPath  = "/Download/gameplay.db";
+                String backupDBPath  = "/gameplay.db";
                 File  backupDB= new File(data, currentDBPath);
                 File currentDB  = new File(sd, backupDBPath);
 
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             if (sd.canWrite()) {
                 String  currentDBPath= "//data//" + "com.example.denis.mlleveleditor"
                         + "//databases//" + "gameplay.db";
-                String backupDBPath  = "/Download/gameplay.db";
+                String backupDBPath  = "/gameplay.db";
                 File currentDB = new File(data, currentDBPath);
                 File backupDB = new File(sd, backupDBPath);
 
@@ -190,8 +190,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         do {
-            cursor = database.query(LevelDBHelper.TABLE_LEVELS_INFO,null,null,null,null,null,null);
-            cursor.moveToFirst();
             levelID = cursor.getInt(levelIDIndex);
             levelSizeX = cursor.getInt(levelSizeXIndex);
             levelSizeY = cursor.getInt(levelSizeYIndex);
